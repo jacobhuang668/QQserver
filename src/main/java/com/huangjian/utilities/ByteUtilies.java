@@ -17,7 +17,6 @@ public class ByteUtilies {
         return bytes;
     }
 
-
     // 将4字节数组转换为整数
     public static int bytesToInt(byte[] bytes) {
         int value = 0;
