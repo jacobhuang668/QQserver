@@ -4,10 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.huangjian.qqcommon.Message;
 import com.huangjian.qqcommon.MessageType;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.Socket;
 import java.time.LocalDate;
 
@@ -25,10 +22,10 @@ public class RetainSocketThread extends Thread {
         try {
             while (true) {
                 byte[] bytes = ByteUtilies.readBytes(socket);
-                System.out.println("server:"+bytes.length);
-                Message messageFromClient = JSON.parseObject(new String(bytes), Message.class);
+                byte[] decode = ByteUtilies.decode(new String(bytes));
+                Message messageFromClient = JSON.parseObject(new String(decode), Message.class);
                 //在线用户数量
-                if (MessageType.ONLINE_USER_COUNT_COMMAND.equals(messageFromClient.getMsgType())) {
+                if (messageFromClient!=null&&MessageType.ONLINE_USER_COUNT_COMMAND.equals(messageFromClient.getMsgType())) {
                     Message msg = new Message();
                     msg.setMsgType(MessageType.ONLINE_USER_COUNT_SUCCEED);
                     msg.setSendTime(LocalDate.now());
@@ -38,7 +35,7 @@ public class RetainSocketThread extends Thread {
                     String jsonString = JSON.toJSONString(msg);
                     RetainSocketThread socketThread = ManageServiceSocketCollection.getThreadSocket(messageFromClient.getSender());
                     ByteUtilies.writeBytes(socketThread.getSocket(),jsonString.getBytes());
-                } else if (MessageType.USER_QUIT_COMMAND.equals(messageFromClient.getMsgType())) {//退出指令
+                } else if (messageFromClient!=null&&MessageType.USER_QUIT_COMMAND.equals(messageFromClient.getMsgType())) {//退出指令
                     RetainSocketThread threadSocket = ManageServiceSocketCollection.getThreadSocket(messageFromClient.getSender());
                     if (threadSocket != null) {
                         ManageServiceSocketCollection.removeSocketThread(messageFromClient.getSender());
@@ -46,7 +43,7 @@ public class RetainSocketThread extends Thread {
                         System.out.println("用户:" + messageFromClient.getSender() + ",退出系统");
                         break;
                     }
-                } else if (MessageType.PRIVATE_CHAT_COMMAND.equals(messageFromClient.getMsgType())) {
+                } else if (messageFromClient!=null&&MessageType.PRIVATE_CHAT_COMMAND.equals(messageFromClient.getMsgType())) {
                     RetainSocketThread threadSocket = ManageServiceSocketCollection.getThreadSocket(messageFromClient.getReceiver());
                     Message msg = new Message();
                     msg.setSendTime(LocalDate.now());
@@ -61,8 +58,7 @@ public class RetainSocketThread extends Thread {
                     System.out.println("server---"+Thread.currentThread().getName());
                     String jsonString = JSON.toJSONString(msg);
                     ByteUtilies.writeBytes(threadSocket.getSocket(),jsonString.getBytes());
-
-                }else if(MessageType.SEND_FILE_COMMAND.equals(messageFromClient.getMsgType())){
+                }else if(messageFromClient!=null&&MessageType.SEND_FILE_COMMAND.equals(messageFromClient.getMsgType())){
                     RetainSocketThread threadSocket = ManageServiceSocketCollection.getThreadSocket(messageFromClient.getReceiver());
                     Message msg = new Message();
                     msg.setSendTime(LocalDate.now());
@@ -71,14 +67,13 @@ public class RetainSocketThread extends Thread {
                     msg.setReceiver(messageFromClient.getReceiver());
                     msg.setMsgType(MessageType.SEND_FILE_SUCCEED);
                     String jsonString = JSON.toJSONString(msg);
-                    ByteUtilies.writeBytes(threadSocket.getSocket(),jsonString.getBytes());
-
+                    String encode = ByteUtilies.encode(jsonString.getBytes());
+                    ByteUtilies.writeBytes(threadSocket.getSocket(),encode.getBytes());
                 }
             }
-
         } catch (Exception e) {
             System.out.println("连接中断: " + e.getMessage());
-
+            e.printStackTrace();
         } finally {
             try {
                 socket.close();
