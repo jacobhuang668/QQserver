@@ -1,5 +1,7 @@
 package com.huangjian.utilities;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,6 +29,14 @@ public class ManageServiceSocketCollection {
             sb.append(entry.getKey()).append(",");
         }
         return  sb.substring(0, sb.length() - 1);
+    }
+
+    public static List<RetainSocketThread> getAllSocket(){
+        List<RetainSocketThread> list=new ArrayList<>();
+        for(Map.Entry<String,RetainSocketThread>entry:socketThreadMap.entrySet()){
+            list.add(entry.getValue());
+        }
+        return list;
     }
 
 }
